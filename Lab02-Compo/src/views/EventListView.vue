@@ -5,9 +5,11 @@ import type { EventItem } from '@/type'
 import { ref, type Ref, watchEffect, computed  } from 'vue'
 import EventService from '@/services/EventService'
 import type { AxiosResponse } from 'axios'
-
+import { onBeforeRouteUpdate, useRouter } from 'vue-router'
+import NProgress from 'nprogress'
 
 const events: Ref<Array<EventItem>> = ref([])
+const router = useRouter()
 const totalEvent = ref<number>(0)
 const props = defineProps({
   page: {
@@ -20,15 +22,27 @@ const props = defineProps({
   }
 })
 
-watchEffect(()=>{
-  EventService.getEvent(props.limit, props.page).then((response: AxiosResponse<EventItem[]>) => {
+
+EventService.getEvent(3, props.page).then((response: AxiosResponse<EventItem[]>) => {
+  events.value = response.data
+  totalEvent.value = response.headers['x-total-count']
+}).catch(() => {
+  router.push({ name: 'NetworkError' })
+})
+
+onBeforeRouteUpdate((to, from, next) => {
+  const toPage = Number(to.query.page)
+  EventService.getEvent(3, toPage).then((response: AxiosResponse<EventItem[]>) => {
     events.value = response.data
     totalEvent.value = response.headers['x-total-count']
+    next()
+  }).catch(() => {
+    next({ name: 'NetworkError' })
   })
 })
 
 const hasNextPage = computed(() => {
-  const totalPages = Math.ceil(totalEvent.value / props.limit)
+  const totalPages = Math.ceil(totalEvent.value / 3)
   return props.page.valueOf() < totalPages
 })
 </script>
