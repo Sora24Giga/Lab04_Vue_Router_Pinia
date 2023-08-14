@@ -101,7 +101,8 @@ const router = createRouter({
       component: NetworkErrorView
     }
   ], 
-    scrollBehavior() {
+    scrollBehavior(to, from, savedPosition) {
+      if (savedPosition)
       return { top: 0 }
     }
 })
